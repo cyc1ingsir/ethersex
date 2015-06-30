@@ -25,12 +25,72 @@
 #include "hardware/storage/sd_reader/fat.h"
 #include "core/vfs/vfs.h"
 #include "hardware/storage/sd_reader/vfs_sd.h"
+#include "services/clock/clock.h"
 
 #include "filelogger.h"
 
 
 struct vfs_file_handle_t *filelogger_handle;
 uint8_t previous_day;
+
+
+/*
+ * returns 0 on success
+ */
+static uint8_t
+check_open_file(clock_datetime_t *date)
+{
+  if (filelogger_handle)
+  {
+    uint16_t mDate = filelogger_handle->u.sd->dir_entry.modification_date;
+    uint8_t mDay = (mDate >> 0) & 0x1f;
+    uint8_t mMonth = (mDate >> 5) & 0x0f;
+    if (date->day == mDay)
+    {
+      return 0;
+    }
+    else
+    {
+      // file was modified some other month than
+      // the current - truncate and reopen.
+      if (mMonth != date->month)
+      {
+        vfs_fseek_truncate_close(1, filelogger_handle, 0, SEEK_SET);
+      }
+      filelogger_close();
+      check_open_file(date);    // if close was successful
+    }
+  }
+
+
+  char *filename = malloc(sizeof(char) * 7);
+  snprintf_P(filename, 7, PSTR("%02d.txt"), date->day);
+  if ((filelogger_handle = vfs_sd_open(filename)) == NULL)
+  {
+    if ((filelogger_handle = vfs_sd_create(filename)) == NULL)
+    {
+      LGRDEBUG("could not open file");
+      return 1;
+    }
+  }
+  LGRDEBUG("opened new log file for today");
+  return 0;
+}
+
+/*
+ * returns 0 on success
+ */
+static uint8_t
+is_current(clock_datetime_t *date)
+{
+  clock_current_localtime(date);
+  if (date->day != previous_day)
+  {
+    previous_day = date->day;
+    return 1;
+  }
+  return 0;
+}
 
 /*
  *  initially setup the logger
@@ -48,59 +108,20 @@ filelogger_init(const char *dirname)
     LGRDEBUG("sd reader not initialized?");
   return 1;
 
+  // TODO check that vfs_sd_rootnode is not dirname already ....
+
   if ((vfs_sd_rootnode = vfs_sd_chdir(dirname)) == NULL)
   {
     vfs_sd_mkdir_recursive(dirname);
-  vfs_sd_rootnode = vfs_sd_chdir(dirname)}
-
-  // this works only, if init is not been called twice
-  // otherwise the date passed on is 0
-  // TODO fix this
-  return check_open_file(is_current());
-
-}
-
-/*
- * returns 0 on success
- */
-static uint8_t
-check_open_file(clock_datetime_t date)
-{
-  if (filelogger_handle)
-  {
-    filelogger_handle->dir_entry.modification_date;
-    mDay = (filelogger_handle->dir_entry->modification_date >> 0) & 0x1f;
-    mMonth = (filelogger_handle->dir_entry->modification_date >> 5) & 0x0f;
-    if (date.day == mDay)
-    {
-      return 0;
-    }
-    else
-    {
-      // file was modified some other month than
-      // the current - truncate and reopen.
-      if (mMonth != date.month)
-      {
-        truncate( filelogger_handle, 0);
-      }
-      filelogger_close();
-      check_open_file(date);    // if close was successful
-    }
+    vfs_sd_rootnode = vfs_sd_chdir(dirname);
   }
 
-
-  char *filename = malloc(sizeof(char) * 7);
-  snprintf_P(filename, 7, PSTR("%02d.txt"), date.day);
-  if ((filelogger_handle = vfs_sd_open(filename)) == NULL)
+  clock_datetime_t date;
+  if (is_current(&date)==0)
   {
-    if ((filelogger_handle = vfs_sd_create(filename)) == NULL)
-    {
-      LGRDEBUG("could not open file");
-      return 1;
-    }
+    return check_open_file(&date);
   }
-  LGRDEBUG("opened new log file for today");
-  return 0;
+  return 1;
 }
 
 uint8_t
@@ -113,19 +134,6 @@ filelogger_close()
     return 0;
   }
   return 1;
-}
-
-static clock_datetime_t
-is_current()
-{
-  clock_datetime_t date;
-  clock_current_localtime(&date);
-  if (date.day != previous_day)
-  {
-    previous_day = date.day;
-    return 0;
-  }
-  return date;
 }
 
 /**
@@ -141,10 +149,10 @@ filelogger_log(char *entry, uint16_t len)
     return 1;
   }
 
-  clock_datetime_t date = is_current();
-  if (date)
+  clock_datetime_t date;
+  if (is_current(&date)==0)
   {
-    check_open_file(date);
+    check_open_file(&date);
   }
 
   // just to make sure
@@ -153,9 +161,11 @@ filelogger_log(char *entry, uint16_t len)
 
 #define TIMESTAMP_LEN 12
     char timestamp[TIMESTAMP_LEN];
-    strptr = &timestamp[0];
-    snprintf_P(strptr, TIMESTAMP_LEN, PSTR("[%02d:%02d:%02d] "), date.hour,
-               date.min, date.sec);
+    char *strptr = &timestamp[0];
+    snprintf_P(strptr, TIMESTAMP_LEN, PSTR("[%02d:%02d:%02d] "),
+               date.hour,
+               date.min,
+               date.sec);
 
     vfs_sd_fseek(filelogger_handle, 0, SEEK_END);
     vfs_sd_write(filelogger_handle, timestamp, TIMESTAMP_LEN);
