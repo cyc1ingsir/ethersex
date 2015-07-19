@@ -32,7 +32,7 @@
 
 struct vfs_file_handle_t *filelogger_handle;
 uint8_t previous_day;
-
+char * folder_name;
 
 /*
  * returns 0 on success
@@ -58,27 +58,31 @@ check_open_file(clock_datetime_t *date)
         vfs_fseek_truncate_close(1, filelogger_handle, 0, SEEK_SET);
       }
       filelogger_close();
-      check_open_file(date);    // if close was successful
+      return check_open_file(date);    // if close was successful
     }
   }
-
-
-  char *filename = malloc(sizeof(char) * 7);
-  snprintf_P(filename, 7, PSTR("%02d.txt"), date->day);
+  uint8_t len = sizeof(char) * 9 + strlen(folder_name);
+  char *filename = malloc(len);
+  snprintf_P(filename, len, PSTR("/%s/%02d.txt"), folder_name, date->day);
   if ((filelogger_handle = vfs_sd_open(filename)) == NULL)
   {
     if ((filelogger_handle = vfs_sd_create(filename)) == NULL)
     {
       LGRDEBUG("could not open file");
+      free(filename);
       return 1;
     }
   }
-  LGRDEBUG("opened new log file for today");
+  LGRDEBUG("opened new log file for today\n");
+  free(filename);
   return 0;
 }
 
 /*
- * returns 0 on success
+ * returns 0 if last call of this function was
+ *           made on the same day
+ *         1 if the last call was made on any
+ *           other day
  */
 static uint8_t
 is_current(clock_datetime_t *date)
@@ -93,37 +97,59 @@ is_current(clock_datetime_t *date)
 }
 
 /*
- *  initially setup the logger
+ * initially setup the logger
  * returns 0 on success
+ * This function may be called only once!
  */
 uint8_t
 filelogger_init(const char *dirname)
 {
 
-  LGRDEBUG("filelog_init");
-  // current time available?
-  // return if not
-
-  if (vfs_sd_rootnode == 0)
-    LGRDEBUG("sd reader not initialized?");
-  return 1;
+  if (vfs_sd_rootnode == 0){
+    LGRDEBUG("sd reader not initialized?\n");
+    return 1;
+  }
 
   // TODO check that vfs_sd_rootnode is not dirname already ....
-
-  if ((vfs_sd_rootnode = vfs_sd_chdir(dirname)) == NULL)
+  // this might work without dir_node!
+  struct fat_dir_struct *dir_node;
+  if ((dir_node = vfs_sd_chdir(dirname)) == NULL)
   {
     vfs_sd_mkdir_recursive(dirname);
-    vfs_sd_rootnode = vfs_sd_chdir(dirname);
+    if ((dir_node = vfs_sd_chdir(dirname)) == NULL)
+    {
+      LGRDEBUG("unable to create folder?\n");
+      return 2;
+    }
+  }
+  folder_name = strdup(dirname);
+  if(folder_name == NULL)
+  {
+    LGRDEBUG("can't store folder name to RAM!\n");
+  }
+
+  //fat_reset_dir(vfs_sd_rootnode);
+
+  if (!clock_last_sync())
+  {
+    // can't open the file until the the system clock is in sync
+    // we do not have the current day yet
+    // the file will be opened when filelogger_log is called
+    LGRDEBUG("logfile not opened yet but logging will care about that later\n");
+    return 0;
   }
 
   clock_datetime_t date;
-  if (is_current(&date)==0)
+  if(is_current(&date))
   {
-    return check_open_file(&date);
+    check_open_file(&date);
   }
-  return 1;
+  return 0;
 }
 
+/**
+ *
+ */
 uint8_t
 filelogger_close()
 {
@@ -138,6 +164,8 @@ filelogger_close()
 
 /**
  * log entry with a leading current timestamp
+ * filelog_init needs to be called ONCE prior to using
+ * the filelogger
  */
 uint8_t
 filelogger_log(char *entry, uint16_t len)
@@ -150,7 +178,7 @@ filelogger_log(char *entry, uint16_t len)
   }
 
   clock_datetime_t date;
-  if (is_current(&date)==0)
+  if(is_current(&date))
   {
     check_open_file(&date);
   }
