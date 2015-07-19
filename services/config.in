@@ -28,5 +28,6 @@ source services/projectors/sanyoZ700/config.in
 source services/freqcount/config.in
 source services/tanklevel/config.in
 source services/filelogger/config.in
+source services/climaterecorder/config.in
 endmenu
 

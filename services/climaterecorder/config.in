@@ -1,0 +1,6 @@
+dep_bool_menu "Climate Recorder" CLIMATE_RECORDER_SUPPORT $FILE_RECORDER_SUPPORT  
+
+    comment  "Debugging Flags"
+    dep_bool "Climate RECORDER Debug" DEBUG_CLIMATE_RECORDER $DEBUG $CLIMATE_RECORDER_SUPPORT
+endmenu
+
