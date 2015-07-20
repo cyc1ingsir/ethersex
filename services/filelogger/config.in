@@ -1,0 +1,5 @@
+dep_bool_menu "File Logger" FILE_LOGGER_SUPPORT $SD_DATETIME_SUPPORT
+
+    comment  "Debugging Flags"
+    dep_bool "File Logger Debug" DEBUG_FILE_LOGGER $DEBUG
+endmenu
