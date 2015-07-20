@@ -3,15 +3,17 @@
 # typesafety
 declare -a sensor_pins
 declare -a sensor_names
+declare -a sensor_types
 
 let index=0
-while read pin name wastetonewline
+while read pin name type wastetonewline
 do
 	[[ "$pin" =~ ^#.* ]] && continue
 	[[ -z "$pin" ]] && continue
 
 	sensor_pins[index]=$pin
 	sensor_names[index]=$name
+  sensor_types[index]=$type
 
 	let index=index+1
 done
@@ -40,6 +42,7 @@ do
 	echo -e "\t{"
 	echo -e "\t\t.port = &PORT${sensor_pins[index]:1:1},"
 	echo -e "\t\t.pin = ${sensor_pins[index]},"
+  echo -e "\t\t.type = ${sensor_types[index]},"
 	echo -e "\t\t.name = sensor_name_${sensor_names[index]}"
 	if [ $index -lt $(($num_sensors-1)) ]; then
 		echo -e "\t},"

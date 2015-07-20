@@ -185,6 +185,29 @@ dht_read(dht_sensor_t *sensor)
   sensor->temp = t;
   t = data[0] << 8 | data[1];
   sensor->humid = t;
+#elif DHT_TYPE == MULTI
+  if (sensor->type == DHT_TYPE_11)
+  {
+    t = data[2];
+    t *= 10;
+    sensor->temp = t;
+    t = data[0];
+    t *= 10;
+    sensor->humid = t;
+    DHT_DEBUG("Sensor type DHT_TYPE_11");
+  }
+  else if(sensor->type == DHT_TYPE_22){
+    t = data[2] << 8 | data[3];
+    if (t & 0x8000)
+    {
+      t &= ~0x8000;
+      t = -t;
+    }
+    sensor->temp = t;
+    t = data[0] << 8 | data[1];
+    sensor->humid = t;
+    DHT_DEBUG("Sensor type DHT_TYPE_22");
+  }
 #endif
   DHT_DEBUG("%S t=%d, h=%d%%", sensor->name, sensor->temp, sensor->humid);
 }

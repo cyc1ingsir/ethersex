@@ -33,6 +33,7 @@ typedef struct
 {
   volatile uint8_t* port;
   uint8_t pin;
+  uint8_t type;
   const char* name;
   uint16_t polling_delay;
   int16_t temp;
