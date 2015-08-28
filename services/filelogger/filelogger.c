@@ -77,7 +77,7 @@ check_open_file(clock_datetime_t *date)
 #define TIMESTAMP_LEN 33
     char timestamp[TIMESTAMP_LEN];
     char *strptr = &timestamp[0];
-    snprintf_P(strptr, TIMESTAMP_LEN, PSTR("#%u\n"), current);
+    snprintf_P(strptr, TIMESTAMP_LEN, PSTR("#%lu\n"), current);
     vfs_sd_write(filelogger_handle, timestamp, strlen(strptr));
   }
   LGRDEBUG("opened new log file for today\n");
@@ -193,12 +193,12 @@ filelogger_log(char *entry, uint16_t len)
   // just to make sure
   if (filelogger_handle)
   {
+    const uint8_t length_ts = 12;
+    const uint8_t line_len = len + length_ts;
 
-#define TIMESTRING_LEN 12
-    uint8_t len = len + TIMESTRING_LEN;
-    char line[len];
+    char line[line_len];
     char *strptr = &line[0];
-    snprintf_P(strptr, len, PSTR("[%02d:%02d:%02d] %s"),
+    snprintf_P(strptr, line_len, PSTR("[%02d:%02d:%02d] %s"),
                date.hour,
                date.min,
                date.sec,
@@ -206,7 +206,7 @@ filelogger_log(char *entry, uint16_t len)
               );
 
     vfs_sd_fseek(filelogger_handle, 0, SEEK_END);
-    vfs_sd_write(filelogger_handle, line, len);
+    vfs_sd_write(filelogger_handle, strptr, strlen(strptr));
     sd_raw_sync();
   }
   else
