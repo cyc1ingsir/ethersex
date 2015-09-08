@@ -5,10 +5,11 @@
  *      Author: Felix
  */
 
-#include "global.h"
 #include <util/atomic.h>
-#include "core/debug.h"
+#include <util/delay.h>
 #include "core/spi.h"
+
+#include "rfm69.h"
 
 #ifdef RFM69_H_
 
@@ -18,9 +19,7 @@ rfm_cmd(uint16_t command, uint8_t wnr) {
 	// Split command in two bytes, merge with write-/read-flag
 	uint8_t highbyte = (wnr ? ((command >> 8) | 0x80) : ((command >> 8) & 0x7F));
 	uint8_t lowbyte = (wnr ? (command & 0x00FF) : 0xFF);
-  //debug_printf("%d ", lowbyte);
 
-//  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 
   ACTIVATE_RFM69;
 
@@ -52,7 +51,6 @@ rfm_cmd(uint16_t command, uint8_t wnr) {
 
   DEACTIVATE_RFM69;
 
-//  } // ATOMIC end
 	return lowbyte;
 }
 
