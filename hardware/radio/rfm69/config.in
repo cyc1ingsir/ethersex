@@ -1,0 +1,25 @@
+dep_bool_menu "RFM69" RFM69_SUPPORT $ARCH_AVR
+
+  choice 'RFM69 frequency'  \
+      "433.920MHz  RFM69_FREQ_433920  \
+       867.595MHz  RFM69_FREQ_867595  \
+       869.775MHz  RFM69_FREQ_869775  \
+       869.800MHz  RFM69_FREQ_869800  \
+       869.825MHz  RFM69_FREQ_869825  \
+       869.850MHz  RFM69_FREQ_869850  \
+       869.875MHz  RFM69_FREQ_869875  \
+       869.900MHz  RFM69_FREQ_869900  \
+       869.925MHz  RFM69_FREQ_869925" \
+      '867.595MHz'  CONF_RFM69_FREQUENCY
+
+  dep_bool "Use slow SPI" CONF_RFM69_SLOW_SPI
+
+  choice 'SPI clock divider'    \
+      "F_CPU/4    RFM69_FOSC4   \
+       F_CPU/16   RFM69_FOSC16  \
+       F_CPU/64   RFM69_FOSC64  \
+       F_CPU/128  RFM69_FOSC128" \
+      'F_CPU/16'   CONF_RFM69_SCK_DIV
+
+endmenu 
+
