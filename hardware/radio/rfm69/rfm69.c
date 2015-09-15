@@ -1,8 +1,11 @@
 /*
- * rfm69.c
+ * Copyright (c) 2015 by Felix Pflaum  https://www.mikrocontroller.net/user/show/fixxl
+ * Copyright (c) 2015 Meinhard Ritscher <unreachable@gmx.net>
+ *
+ * Lizenz in Klaerung - GPLv3 vorgeschlagen
  *
  *  Created on: 15.06.2013
- *      Author: Felix
+ *
  */
 
 #include <util/atomic.h>
