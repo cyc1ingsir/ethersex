@@ -1,5 +1,10 @@
 /*
- * rfm69.h
+ * Copyright (c) 2015 by Felix Pflaum  https://www.mikrocontroller.net/user/show/fixxl
+ * Copyright (c) 2015 Meinhard Ritscher <unreachable@gmx.net>
+ *
+ * Lizenz in Klaerung - GPLv3 vorgeschlagen
+ *
+ *
  *
  * Definitionen und Funktionen zur Steuerung des Funkmoduls RFM69
  *
