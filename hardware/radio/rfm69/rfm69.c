@@ -380,6 +380,7 @@ rfm_init(void)
  */
 uint8_t rfm_transmit(char *data, uint8_t length)
 {
+  PIN_SET(STATUSLED_RFM69_TX);
   uint32_t utimer = RFM69_TIMEOUTVAL;
 
   char fifoarray[MAX_ARRAYSIZE + 1];
@@ -417,7 +418,7 @@ uint8_t rfm_transmit(char *data, uint8_t length)
     ;
 
   rfm_txoff();
-
+  PIN_CLEAR(STATUSLED_RFM69_TX);
   return (utimer ? 0 : 1);    // 0 : successful, 1 : error
 }
 
