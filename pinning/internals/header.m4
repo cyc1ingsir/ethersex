@@ -120,6 +120,12 @@ define(`RFM12_USE_INT', `dnl
 #define RFM12_INT_VECTOR INT$1`_vect'
 ')
 
+define(`RFM69_USE_INT', `dnl
+/* rfm69 module interrupt line */
+#define RFM69_INT_PIN INT$1
+#define RFM69_INT_VECTOR INT$1`_vect'
+')
+
 define(`RFM12_USE_PCINT', `dnl
 /* RFM12 PinChange-Interrupt Line  PCINT$1 -> $2 */
 pin(RFM12_PCINT, $2, INPUT)
