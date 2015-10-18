@@ -16,6 +16,8 @@ ifdef(`conf_SD_READER', `
 ifdef(`conf_RFM69', `dnl
   /* port the rfm69 module CS is attached to */
   pin(SPI_CS_RFM69, PD5, OUTPUT)
+  pin(RFM69_IRQ, PD3, INPUT)
+  RFM69_USE_INT(1)
   pin(STATUSLED_RFM69_TX, PD4, OUTPUT)
   pin(STATUSLED_RFM69_RX, PD6, OUTPUT)
 
