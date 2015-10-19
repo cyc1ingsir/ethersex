@@ -40,7 +40,7 @@
 #include "core/stopwatch.h"
 #else
 #include "services/clock/clock.h"
-#define millis() {clock_get_uptime();}
+#define millis() (clock_get_uptime())
 #endif
 
 uint8_t _address
