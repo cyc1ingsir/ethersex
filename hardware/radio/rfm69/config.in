@@ -1,4 +1,4 @@
-dep_bool_menu "RFM69" CONF_RFM69_SUPPORT $ARCH_AVR
+dep_bool_menu "RFM69" RFM69_SUPPORT $ARCH_AVR
 
   choice 'RFM69 frequency band'   \
       "315MHz  RF69_315MHZ   \
@@ -20,7 +20,7 @@ dep_bool_menu "RFM69" CONF_RFM69_SUPPORT $ARCH_AVR
        F_CPU/128  RFM69_FOSC128" \
       'F_CPU/16'   CONF_RFM69_SCK_DIV
   comment  "Debugging Flags"
-  dep_bool 'Debug Logging' DEBUG_RFM69_LOGGER $CONF_RFM69_SUPPORT
+  dep_bool 'Debug Logging' DEBUG_RFM69_LOGGER $RFM69_SUPPORT
 
 endmenu 
 
