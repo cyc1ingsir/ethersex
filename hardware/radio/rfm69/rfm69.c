@@ -402,18 +402,18 @@ ISR(RFM69_INT_VECTOR)
 
     } else {
 
-      DATALEN = PAYLOADLEN - 3;
+      RFM69_DATALEN = PAYLOADLEN - 3;
       SENDERID = spi_send(0);
       uint8_t CTLbyte = spi_send(0);
 
       ACK_RECEIVED = CTLbyte & 0x80; // extract ACK-received flag
       ACK_REQUESTED = CTLbyte & 0x40; // extract ACK-requested flag
 
-      for (uint8_t i = 0; i < DATALEN; i++)
+      for (uint8_t i = 0; i < RFM69_DATALEN; i++)
       {
-        DATA[i] = spi_send(0);
+        RFM69_DATA[i] = spi_send(0);
       }
-      if (DATALEN < RF69_MAX_DATA_LEN) DATA[DATALEN] = 0; // add null at end of string
+      if (RFM69_DATALEN < RF69_MAX_DATA_LEN) RFM69_DATA[RFM69_DATALEN] = 0; // add null at end of string
       unselect();
       setMode(RF69_MODE_RX);
     }
@@ -428,7 +428,7 @@ ISR(RFM69_INT_VECTOR)
 // internal function
 static
 void receiveBegin() {
-  DATALEN = 0;
+  RFM69_DATALEN = 0;
   SENDERID = 0;
   TARGETID = 0;
   PAYLOADLEN = 0;
