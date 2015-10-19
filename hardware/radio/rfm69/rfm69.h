@@ -82,8 +82,8 @@
 #define RF69_TX_LIMIT_MS   1000
 #define RF69_FSTEP  61.03515625 // == FXOSC / 2^19 = 32MHz / 2^19 (p13 in datasheet)
 
-static volatile uint8_t DATA[RF69_MAX_DATA_LEN]; // recv/xmit buf, including header & crc bytes
-static volatile uint8_t DATALEN;
+static volatile uint8_t RFM69_DATA[RF69_MAX_DATA_LEN]; // recv/xmit buf, including header & crc bytes
+static volatile uint8_t RFM69_DATALEN;
 static volatile uint8_t SENDERID;
 static volatile uint8_t TARGETID; // should match _address
 static volatile uint8_t PAYLOADLEN;
