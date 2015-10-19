@@ -23,7 +23,7 @@
 #include "rfm69receiver.h"
 
 
-#ifdef RFM69_SUPPORT
+#ifdef CONF_RFM69_SUPPORT
   #include "hardware/radio/rfm69/rfm69.h"
 #else
   #error: RFM69_SUPPORT missing
@@ -36,9 +36,12 @@ int8_t
 rfm69_receiver_init(void)
 {
   RFM69RECEIVERDEBUG("rmf init ...\n");
-  rfm_init();
+  rfm69_initialize(RF69_868MHZ, RFM69_NODE_ID, RFM69_NET_ID);
+  rfm69_setPowerLevel(20);
+  rfm69_setFrequency(RFM69_FREQUENCY);
+
   RFM69RECEIVERDEBUG("            ... finished. \n");
-  rfm_rxon();
+  rfm69_receiveDone();
   return 0;
 }
 
@@ -50,16 +53,17 @@ int8_t
 rfm69_receiver_receive(void)
 {
 
-  char data[MAX_ARRAYSIZE + 1];
-  uint8_t rx_length, counter = 0;
+  uint8_t counter = 0;
 
   rx_length = 0;
 
-  if (rfm_receiving()) {
-    rfm_receive(data, &rx_length);
-    data[ ( rx_length+2 <= MAX_ARRAYSIZE )? rx_length + 2 : MAX_ARRAYSIZE ]  = 0;
-    RFM69RECEIVERDEBUG("received %d bytes: %s \n", rx_length, data);
-    rfm_rxon();
+  if (rfm69_receiveDone()) {
+// wie kann ich die Daten aus dem Array holen? 
+    if(rfm69_ACKRequested())
+    {
+      rfm69_sendACK("", 0);
+    }
+    RFM69RECEIVERDEBUG("received %d bytes: %s \n", RFM69_DATALEN, RFM69_DATA);
     PIN_CLEAR(STATUSLED_RFM69_TX);
   } else {
     // set status led if nothing was received for quite a while
