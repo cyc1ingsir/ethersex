@@ -44,9 +44,9 @@
 #endif
 
 #define rfm69_int_enable()  \
-  _EIMSK |= _BV(RFM69_INT_PIN);
+  _EIMSK |= _BV(RFM69_IRQ_PIN);
 #define rfm69_int_disable()     \
-  _EIMSK &= ~_BV(RFM69_INT_PIN);
+  _EIMSK &= ~_BV(RFM69_IRQ_PIN);
 
 #define PIN_READ(pin) (PIN_CHAR(pin ## _PORT) & _BV(pin ## _PIN))
 #define SET_SPI_MODE0      {SPCR&=~(_BV(CPOL)|_BV(CPHA));}
