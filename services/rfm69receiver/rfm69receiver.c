@@ -42,6 +42,9 @@ rfm69_receiver_init(void)
 
   RFM69RECEIVERDEBUG("            ... finished. \n");
   rfm69_receiveDone();
+  RFM69RECEIVERDEBUG("RFM69 mode = %x\n", rfm69_getMode());
+  RFM69RECEIVERDEBUG("RFM69 frequency: %lu\n", rfm69_getFrequency());
+  RFM69RECEIVERDEBUG("RFM69 temperature: %u\n",rfm69_readTemperature(0));
   return 0;
 }
 
@@ -54,8 +57,6 @@ rfm69_receiver_receive(void)
 {
 
   uint8_t counter = 0;
-
-  rx_length = 0;
 
   if (rfm69_receiveDone()) {
 // wie kann ich die Daten aus dem Array holen? 

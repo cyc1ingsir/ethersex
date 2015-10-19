@@ -1,4 +1,4 @@
-dep_bool_menu "RFM69 Test-Receiver" RFM69_RECEIVER_SUPPORT $RFM69_SUPPORT
+dep_bool_menu "RFM69 Test-Receiver" RFM69_RECEIVER_SUPPORT $CONF_RFM69_SUPPORT
 
     comment  "Debugging Flags"
     dep_bool "Test-Receiver Debug" DEBUG_RFM69_TESTRECEIVER $DEBUG $RFM69_RECEIVER_SUPPORT
