@@ -23,7 +23,7 @@
 #include "rfm69receiver.h"
 
 
-#ifdef CONF_RFM69_SUPPORT
+#ifdef RFM69_SUPPORT
   #include "hardware/radio/rfm69/rfm69.h"
 #else
   #error: RFM69_SUPPORT missing
