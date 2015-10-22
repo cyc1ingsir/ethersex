@@ -52,9 +52,10 @@ int16_t enc28j60_next_packet_pointer;
 
 
 /* module local macros */
-#ifdef RFM12_IP_SUPPORT
-/* RFM12 uses interrupts which do SPI interaction, therefore
-   we have to disable interrupts if support is enabled */
+#if defined(RFM12_IP_SUPPORT) ||\
+    defined(RFM69_SUPPORT)
+/* RFM12 and RFM69 use interrupts which do SPI interaction,
+ * therefore we have to disable interrupts if support is enabled */
 #  define cs_low()  uint8_t sreg = SREG; cli(); PIN_CLEAR(SPI_CS_NET); 
 #  define cs_high() PIN_SET(SPI_CS_NET); SREG = sreg;
 #else
