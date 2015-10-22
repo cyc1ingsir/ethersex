@@ -192,7 +192,7 @@ uint8_t sd_raw_init(void)
     configure_pin_miso();
 #endif
 
-    unselect_card();
+    PIN_SET(SPI_CS_SD_READER);// unselect_card();
 
     /* initialize SPI with lowest frequency; max. 400kHz during identification mode of card */
     SPCR = (0 << SPIE) | /* SPI Interrupt Enable */
