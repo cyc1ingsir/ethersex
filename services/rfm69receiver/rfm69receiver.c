@@ -29,6 +29,9 @@
   #error: RFM69_SUPPORT missing
 #endif
 
+  uint8_t counter = 0;
+  uint16_t packet_nr = 0;
+  char * rfm_receiver_buffer[30];
 /*
  * setup the rmf69 module for receiving
  */
@@ -41,8 +44,6 @@ rfm69_receiver_init(void)
   rfm69_setFrequency(RFM69_FREQUENCY);
 
   RFM69RECEIVERDEBUG("            ... finished. \n");
-  rfm69_receiveDone();
-  RFM69RECEIVERDEBUG("RFM69 mode = %x\n", rfm69_getMode());
   RFM69RECEIVERDEBUG("RFM69 frequency: %lu\n", rfm69_getFrequency());
   RFM69RECEIVERDEBUG("RFM69 temperature: %u\n",rfm69_readTemperature(0));
   return 0;
@@ -56,19 +57,26 @@ int8_t
 rfm69_receiver_receive(void)
 {
 
-  uint8_t counter = 0;
-
-  if (rfm69_receiveDone()) {
-// wie kann ich die Daten aus dem Array holen? 
+  if(rfm69_receiveDone())
+  {
+    counter = 0;
+    uint8_t rx_length = 30;
+    uint8_t sender_id = RFM69_SENDERID;
+    rfm69_getData(rfm_receiver_buffer, &rx_length);
     if(rfm69_ACKRequested())
     {
       rfm69_sendACK("", 0);
     }
-    RFM69RECEIVERDEBUG("received %d bytes: %s \n", RFM69_DATALEN, RFM69_DATA);
+    rfm69_receiveDone();
+    if(rx_length > 10)
+    {
+      RFM69RECEIVERDEBUG("[%05u]received %u bytes from %u: %s \n", ++packet_nr, rx_length, sender_id, rfm_receiver_buffer);
+    }
     PIN_CLEAR(STATUSLED_RFM69_TX);
+    rfm69_receiveDone();
   } else {
     // set status led if nothing was received for quite a while
-    if(counter++ > 100) {
+    if(++counter > 50) {
       PIN_SET(STATUSLED_RFM69_TX);
       counter = 0;
     }
@@ -81,5 +89,5 @@ rfm69_receiver_receive(void)
   -- Ethersex META --
   header(services/rfm69receiver/rfm69receiver.h)
   init(rfm69_receiver_init)
-  timer(10, rfm69_receiver_receive())
+  timer(20, rfm69_receiver_receive())
 */
