@@ -77,8 +77,17 @@ extern "C"
 #define configure_pin_ss()   DDR_CONFIG_OUT(SPI_CS_SD_READER)
 #define configure_pin_miso() DDR_CONFIG_IN(SPI_MISO)
 
+#if defined(RFM12_IP_SUPPORT) ||\
+    defined(RFM69_SUPPORT)
+/* RFM12 and RFM69 use interrupts which do SPI interaction,
+ * therefore we have to disable interrupts if support is enabled */
+#include <avr/interrupt.h>
+#define select_card()        uint8_t sreg = SREG; cli(); PIN_CLEAR(SPI_CS_SD_READER)
+#define unselect_card()      PIN_SET(SPI_CS_SD_READER); SREG = sreg;
+#else
 #define select_card()        PIN_CLEAR(SPI_CS_SD_READER)
 #define unselect_card()      PIN_SET(SPI_CS_SD_READER)
+#endif
 
 #ifdef SD_READER_AVAILABLE_PIN
 #define configure_pin_available() DDR_CONFIG_IN(SD_READER_AVAILABLE)
