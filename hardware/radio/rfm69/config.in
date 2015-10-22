@@ -21,6 +21,7 @@ dep_bool_menu "RFM69" RFM69_SUPPORT $ARCH_AVR
       'F_CPU/16'   CONF_RFM69_SCK_DIV
   comment  "Debugging Flags"
   dep_bool 'Debug Logging' DEBUG_RFM69_LOGGER $RFM69_SUPPORT
+  dep_bool 'Detailed register values' RFM69_REGISTER_DETAIL $DEBUG_RFM69_LOGGER
 
 endmenu 
 
