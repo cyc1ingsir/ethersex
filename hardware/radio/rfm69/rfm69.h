@@ -51,7 +51,9 @@
 #define PIN_READ(pin) (PIN_CHAR(pin ## _PORT) & _BV(pin ## _PIN))
 #define SET_SPI_MODE0      {SPCR&=~(_BV(CPOL)|_BV(CPHA));}
 #define SET_SPI_MSBFIRST   {SPCR&=~ _BV(DORD);}
-#define SET_SPI_CLK_DIV4   {SPCR&=~(_BV(SPR1)|_BV(SPR0));}
+#define SET_SPI_CLK_DIV8   {_SPSR0=_BV(SPI2X);_SPCR0&=~(_BV(SPR1));_SPCR0|=_BV(SPR0);}
+#define SET_SPI_CLK_DIV4   {_SPSR0&=~_BV(_SPI2X0);_SPCR0&=~(_BV(SPR1)|_BV(SPR0));}
+#define SET_SPI_CLK_DIV2   {_SPSR0=_BV(SPI2X);_SPCR0&=~(_BV(SPR1)|_BV(SPR0));}
 
 
 #define RF69_MAX_DATA_LEN       61 // to take advantage of the built in AES/CRC we want to limit the frame size to the internal FIFO size (66 bytes - 3 bytes overhead - 2 bytes crc)
@@ -82,9 +84,13 @@
 #define RF69_TX_LIMIT_MS   1000
 #define RF69_FSTEP  61.03515625 // == FXOSC / 2^19 = 32MHz / 2^19 (p13 in datasheet)
 
-static volatile uint8_t RFM69_DATA[RF69_MAX_DATA_LEN]; // recv/xmit buf, including header & crc bytes
-static volatile uint8_t RFM69_DATALEN;
-static volatile uint8_t SENDERID;
+// define CTLbyte bits
+#define RFM69_CTL_SENDACK   0x80
+#define RFM69_CTL_REQACK    0x40
+
+volatile uint8_t RFM69_DATA[RF69_MAX_DATA_LEN]; // recv/xmit buf, including header & crc bytes
+volatile uint8_t RFM69_DATALEN;
+volatile uint8_t RFM69_SENDERID;
 static volatile uint8_t TARGETID; // should match _address
 static volatile uint8_t PAYLOADLEN;
 static volatile uint8_t ACK_REQUESTED;
@@ -105,6 +111,7 @@ bool rfm69_receiveDone();
 bool rfm69_ACKReceived(uint8_t fromNodeID);
 bool rfm69_ACKRequested();
 void rfm69_sendACK(const void* buffer, uint8_t bufferSize);
+uint8_t rfm69_getData(char *buffer, uint8_t *rx_length);
 uint32_t rfm69_getFrequency();
 void rfm69_setFrequency(uint32_t freqHz);
 void rfm69_encrypt(const char* key);
@@ -121,15 +128,7 @@ void rfm69_rcCalibration(); // calibrate the internal RC oscillator for use in w
 uint8_t rfm69_readReg(uint8_t addr);
 void rfm69_writeReg(uint8_t addr, uint8_t val);
 uint8_t rfm69_getMode();
-// protected
-/*
-static void sendFrame(uint8_t toAddress, const void* buffer, uint8_t size, bool requestACK, bool sendACK);
 
-static void receiveBegin();
-static void setMode(uint8_t mode);
-static void setHighPowerRegs(bool onOff);
-static void select();
-static void unselect();
-*/
+void rfm69_readAllRegs();
 
 #endif // _RFM69_H
