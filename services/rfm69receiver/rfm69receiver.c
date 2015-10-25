@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "rfm69receiver.h"
+#include "core/util/string_parsing.h"
 
 
 #ifdef RFM69_SUPPORT
@@ -31,7 +32,9 @@
 
   uint8_t counter = 0;
   uint16_t packet_nr = 0;
-  char * rfm_receiver_buffer[30];
+  uint16_t missed_packets = 0;
+  char rfm_receiver_buffer[34];
+  char * receiver_buffer_ptr;
 /*
  * setup the rmf69 module for receiving
  */
@@ -59,24 +62,51 @@ rfm69_receiver_receive(void)
 
   if(rfm69_receiveDone())
   {
+    receiver_buffer_ptr = rfm_receiver_buffer;
     counter = 0;
-    uint8_t rx_length = 30;
+    uint8_t rx_length = 34;
     uint8_t sender_id = RFM69_SENDERID;
-    rfm69_getData(rfm_receiver_buffer, &rx_length);
+    rfm69_getData(receiver_buffer_ptr, &rx_length);
+    if(rx_length < 34)
+      rfm_receiver_buffer[rx_length] = 0;
     if(rfm69_ACKRequested())
     {
       rfm69_sendACK("", 0);
     }
     rfm69_receiveDone();
-    if(rx_length > 10)
+    if(rx_length > 5)
     {
-      RFM69RECEIVERDEBUG("[%05u]received %u bytes from %u: %s \n", ++packet_nr, rx_length, sender_id, rfm_receiver_buffer);
+      if(rfm_receiver_buffer[0]== '[' )
+      {
+        uint16_t sender_packet_nr;
+        if(next_uint16( ++receiver_buffer_ptr, &sender_packet_nr))
+        {
+          if(sender_packet_nr != packet_nr)
+          {
+            if (sender_packet_nr - packet_nr > 1)
+              missed_packets++;
+            packet_nr = sender_packet_nr;
+            RFM69RECEIVERDEBUG("[%05u]received %u bytes from %u: %s \n", packet_nr, rx_length, sender_id, ++receiver_buffer_ptr);
+          }
+          else
+          {
+            // this might be a packet already received but not with a ACK send too late for the sender
+          }
+        }
+      }
+      else
+      {
+        RFM69RECEIVERDEBUG("received packet with unknown format: %s \n", receiver_buffer_ptr);
+      }
+      if( missed_packets > 0 )
+        RFM69RECEIVERDEBUG("missed_packets: %u\n", missed_packets);
     }
     PIN_CLEAR(STATUSLED_RFM69_TX);
     rfm69_receiveDone();
   } else {
     // set status led if nothing was received for quite a while
-    if(++counter > 50) {
+    if(++counter > 200)
+    {
       PIN_SET(STATUSLED_RFM69_TX);
       counter = 0;
     }
