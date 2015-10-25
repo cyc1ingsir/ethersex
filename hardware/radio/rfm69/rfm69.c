@@ -116,13 +116,8 @@ bool rfm69_initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   };
 
   // RFM69's CS pin is set to HIGH in spi_init
-
-  //  DDR_CONFIG_IN(RFM69_IRQ);
   // this pin is used in sendFrame function below as well as for the interrupt
-  //rfm69_int_enable();
-  // enbale interrupt on rising edge
-  _EIMSK |= _BV(INT1);
-  _EICRA |= _BV(ISC11) | _BV(ISC10);
+  // DDR_CONFIG_IN(RFM69_IRQ);
 
 #ifdef USE_STOPWATCH
   stopwatch_start();
@@ -130,6 +125,9 @@ bool rfm69_initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   uint32_t start = millis();
   uint8_t timeout = 50;
   do rfm69_writeReg(REG_SYNCVALUE1, 0xAA); while (rfm69_readReg(REG_SYNCVALUE1) != 0xaa && millis()-start < timeout);
+#ifdef USE_STOPWATCH
+  stopwatch_reset();
+#endif
   start = millis();
   do rfm69_writeReg(REG_SYNCVALUE1, 0x55); while (rfm69_readReg(REG_SYNCVALUE1) != 0x55 && millis()-start < timeout);
 
@@ -141,8 +139,12 @@ bool rfm69_initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   rfm69_encrypt(0);
 
   rfm69_setHighPower(_isRFM69HW); // called regardless if it's a RFM69W or RFM69HW
+
   setMode(RF69_MODE_STANDBY);
   while ((rfm69_readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
+#ifdef USE_STOPWATCH
+  stopwatch_reset();
+#endif
   start = millis();
   while (((rfm69_readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00) && millis()-start < timeout); // wait for ModeReady
 #ifdef USE_STOPWATCH
@@ -152,6 +154,10 @@ bool rfm69_initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     return false;
   }
   // interrupt is handled by ISR below
+  //rfm69_int_enable();
+  // enbale interrupt on rising edge
+  _EIMSK |= _BV(INT1);
+  _EICRA |= _BV(ISC11) | _BV(ISC10);
 
   _address = nodeID;
   return true;
@@ -503,7 +509,9 @@ ISR(RFM69_INT_VECTOR)
   }
   PIN_CLEAR(STATUSLED_RFM69_RX);
 }
-#endif //RFM69_INT_HANDLER
+#else
+#warning - No interrupt routine defined
+#endif //RFM69_INT_VECTOR
 
 
 // internal function
