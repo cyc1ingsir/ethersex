@@ -40,7 +40,7 @@ int16_t parse_cmd_ls(char *cmd, char *output, uint16_t len)
 
 int16_t parse_cmd_log(char *cmd, char *output, uint16_t len)
 {
-  return filelogger_log ("Sample log entry\n", 17) == 0 ?
+  return filelogger_log ("Sample log entry\n", 17, 0) == 0 ?
           ECMD_FINAL_OK : ECMD_FINAL(snprintf_P(output, len, PSTR("no valid file handle?")));
 }
 

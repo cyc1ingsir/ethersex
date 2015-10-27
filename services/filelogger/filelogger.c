@@ -35,6 +35,10 @@ uint8_t previous_day;
 char * folder_name;
 
 /*
+ * open logfile for today
+ * truncates stale logfiles with the same name
+ * close logfile if still open from other/previous day and
+ * opens a new one for today
  * returns 0 on success
  */
 static uint8_t
@@ -43,45 +47,79 @@ check_open_file(clock_datetime_t *date)
   if (filelogger_handle)
   {
     uint16_t mDate = filelogger_handle->u.sd->dir_entry.modification_date;
-    uint8_t mDay = (mDate >> 0) & 0x1f;
+    uint16_t mYear = 1980 + ((mDate >> 9) & 0x7f);
     uint8_t mMonth = (mDate >> 5) & 0x0f;
-    if (date->day == mDay)
+    uint8_t mDay = (mDate >> 0) & 0x1f;
+    uint16_t cYear = date->year + 1900;
+
+    if (date->day == mDay && mMonth == date->month && mYear == cYear)
     {
+      // found a logfile which was last modified today
       return 0;
     }
     else
     {
-      // file was modified some other month than
+      // file was modified some other day, month or year than
       // the current - truncate and reopen.
-      if (mMonth != date->month)
-      {
-        vfs_fseek_truncate_close(1, filelogger_handle, 0, SEEK_SET);
-      }
+      LGRDEBUG("found stale logfile close and truncate: %d-%d-%d | %d-%d-%d\n",mYear, mMonth, mDay, cYear, date->month, date->day);
+      // is it safe to truncate the file here?
+      // truncating should only be done if a file with the same name
+      // as the one to be opened does exist
+      vfs_fseek_truncate_close(1, filelogger_handle, 0, SEEK_SET);
       filelogger_close();
       return check_open_file(date);    // if close was successful
     }
   }
-  uint8_t len = sizeof(char) * 9 + strlen(folder_name);
-  char *filename = malloc(len);
-  snprintf_P(filename, len, PSTR("/%s/%02d.txt"), folder_name, date->day);
-  if ((filelogger_handle = vfs_sd_open(filename)) == NULL)
+  else
   {
-    if ((filelogger_handle = vfs_sd_create(filename)) == NULL)
+    // create fully specified logfile name
+    uint8_t len = sizeof(char) * 9 + strlen(folder_name);
+    char *filename = malloc(len);
+    snprintf_P(filename, len, PSTR("/%s/%02d.txt"), folder_name, date->day);
+    if ((filelogger_handle = vfs_sd_open(filename)) == NULL)
     {
-      LGRDEBUG("could not open file");
+      // file couldn't be opened - let's try to create it since
+      // it may not exist yet
+      if ((filelogger_handle = vfs_sd_create(filename)) == NULL)
+      {
+        LGRDEBUG("Error: not open file %s - giving up!\n", filename);
+        free(filename);
+        return 1;
+      }
+      else
+      {
+        LGRDEBUG("opened new log file for today\n");
+      }
+    }
+    if (vfs_sd_size(filelogger_handle) == 0)
+    {
+      timestamp_t current = clock_get_time();
+      // write timestamp to top of file
+#define TIMESTAMP_LEN 33
+      char timestamp[TIMESTAMP_LEN];
+      char *strptr = &timestamp[0];
+      snprintf_P(strptr, TIMESTAMP_LEN, PSTR("#%lu\n"), current);
+      vfs_sd_write(filelogger_handle, timestamp, strlen(strptr));
       free(filename);
-      return 1;
+      LGRDEBUG("added the current time stamp at the top of the empty logfile\n");
+      return 0;
+    }
+    else
+    {
+      // file did exist, was openable and not empty
+      // find out the creation time of the opened file
+      free(filename);
+      return check_open_file(date);
     }
   }
-  LGRDEBUG("opened new log file for today\n");
-  free(filename);
-  return 0;
+  LGRDEBUG("Error: this never should be printed!\n");
+  return 99;
 }
 
 /*
- * returns 0 if last call of this function was
+ * returns 1 if last call of this function was
  *           made on the same day
- *         1 if the last call was made on any
+ *         0 if the last call was made on any
  *           other day
  */
 static uint8_t
@@ -91,9 +129,9 @@ is_current(clock_datetime_t *date)
   if (date->day != previous_day)
   {
     previous_day = date->day;
-    return 1;
+    return 0;
   }
-  return 0;
+  return 1;
 }
 
 /*
@@ -140,7 +178,7 @@ filelogger_init(const char *dirname)
   }
 
   clock_datetime_t date;
-  if(is_current(&date))
+  if(!is_current(&date))
   {
     check_open_file(&date);
   }
@@ -168,7 +206,7 @@ filelogger_close()
  * the filelogger
  */
 uint8_t
-filelogger_log(char *entry, uint16_t len)
+filelogger_log(const char *entry, uint16_t len, const timestamp_t timestamp)
 {
 
   if (!clock_last_sync())
@@ -178,9 +216,27 @@ filelogger_log(char *entry, uint16_t len)
   }
 
   clock_datetime_t date;
-  if(is_current(&date))
+  if(!is_current(&date))
   {
-    check_open_file(&date);
+    // make sure, the logfile of the previous day
+    // gets closed bevor a new one is opened
+    filelogger_close();
+    if (check_open_file(&date) != 0 )
+    {
+      LGRDEBUG("Error: Couldn't open logfile. Can't log entry %s", entry );
+      return 2;
+    }
+  }
+
+  /**
+   * if a timestamp is provided prepend
+   * the provided timestamp rather than
+   * the current one
+   */
+  if(timestamp)
+  {
+    // TODO convert timetamp to date
+    clock_localtime(&date, timestamp);
   }
 
   // just to make sure
