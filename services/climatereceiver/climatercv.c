@@ -30,6 +30,8 @@
 
 uint8_t rx_length, counter = 0;
 char receiver_buffer[MAX_CLIMATE_MESSAGE + 1];
+char * receiver_buffer_ptr;
+
 /*
  * parses a integer number to number
  * and returns a pointer to the delimiting ';'
