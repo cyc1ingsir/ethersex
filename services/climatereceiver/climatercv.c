@@ -28,6 +28,8 @@
   #include "hardware/radio/rfm69/rfm69.h"
 #endif
 
+uint8_t rx_length, counter = 0;
+char receiver_buffer[MAX_CLIMATE_MESSAGE + 1];
 /*
  * parses a integer number to number
  * and returns a pointer to the delimiting ';'
@@ -142,9 +144,10 @@ int8_t
 climate_receiver_init(void)
 {
   CLIMATERCVDEBUG("rmf init ...\n");
-  rfm_init();
+  rfm69_initialize(RF69_868MHZ, RFM69_NODE_ID, RFM69_NET_ID);
+  rfm69_setPowerLevel(20);
+  rfm69_setFrequency(RFM69_FREQUENCY);
   CLIMATERCVDEBUG("            ... finished. \n");
-  rfm_rxon();
   return 0;
 }
 
@@ -156,20 +159,27 @@ int8_t
 climate_receiver_receive(void)
 {
 
-  char data[MAX_ARRAYSIZE + 1];
-  uint8_t rx_length, counter = 0;
-
-  rx_length = 0;
-
-  if (rfm_receiving()) {
-    rfm_receive(data, &rx_length);
-    data[ ( rx_length+2 <= MAX_ARRAYSIZE )? rx_length + 2 : MAX_ARRAYSIZE ]  = 0;
-    CLIMATERCVDEBUG("received %d bytes: %s \n", rx_length, data);
-    rfm_rxon();
-    uint8_t rc = parse_record(data, rx_length);
-    if( rc )
+  if(rfm69_receiveDone())
+  {
+    receiver_buffer_ptr = receiver_buffer;
+    counter = 0;
+    uint8_t rx_length = MAX_CLIMATE_MESSAGE;
+    uint8_t sender_id = RFM69_SENDERID;
+    rfm69_getData(receiver_buffer_ptr, &rx_length);
+    receiver_buffer[ ( rx_length+2 <= MAX_CLIMATE_MESSAGE )? rx_length + 2 : MAX_CLIMATE_MESSAGE ]  = 0;
+    if(rfm69_ACKRequested())
     {
-      CLIMATERCVDEBUG("not able to parse received record rc=%d\n", rc);
+      rfm69_sendACK("", 0);
+    }
+    rfm69_receiveDone();
+    if(rx_length > 5)
+    {
+      CLIMATERCVDEBUG("received %d bytes: %s \n", rx_length, receiver_buffer_ptr);
+      uint8_t rc = parse_record(receiver_buffer_ptr, rx_length);
+      if( rc )
+      {
+        CLIMATERCVDEBUG("not able to parse received record rc=%d\n", rc);
+      }
     }
     PIN_CLEAR(STATUSLED_RFM69_TX);
   } else {

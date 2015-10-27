@@ -25,6 +25,8 @@
 
 #include "services/clock/clock.h"
 
+#define MAX_CLIMATE_MESSAGE 30
+
 typedef struct
 {
   volatile int16_t temp;
