@@ -29,6 +29,7 @@
 #if defined(ENC28J60_SUPPORT)       || \
     defined(SER_RAM_23K256_SUPPORT) || \
     defined(RFM12_SUPPORT)          || \
+    defined(RFM69_SUPPORT)          || \
     defined(DATAFLASH_SUPPORT)      || \
     defined(USTREAM_SUPPORT)        || \
     defined(SPI_CS_SD_READER_PIN)   || \
@@ -56,6 +57,10 @@ spi_init(void)
   {
     *rfm12_moduls[modul].rfm12_port |= rfm12_moduls[modul].rfm12_mask;
   }
+#endif
+
+#ifdef RFM69_SUPPORT
+  PIN_SET(SPI_CS_RFM69);
 #endif
 
 #ifdef DATAFLASH_SUPPORT

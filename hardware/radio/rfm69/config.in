@@ -1,0 +1,27 @@
+dep_bool_menu "RFM69" RFM69_SUPPORT $ARCH_AVR
+
+  choice 'RFM69 frequency band'   \
+      "315MHz  RF69_315MHZ   \
+       433MHz  RF69_433MHZ   \
+       868MHz  RF69_868MHZ   \
+       915MHz  RF69_915MHZ"  \
+      '868MHz'  CONF_RFM69_FREQUENCY
+
+  int "frequency" RFM69_FREQUENCY 868155000
+  int "Node ID"    RFM69_NODE_ID    1
+  int "Network ID" RFM69_NET_ID   100
+
+  dep_bool "Use slow SPI" CONF_RFM69_SLOW_SPI
+
+  choice 'SPI clock divider'    \
+      "F_CPU/4    RFM69_FOSC4   \
+       F_CPU/16   RFM69_FOSC16  \
+       F_CPU/64   RFM69_FOSC64  \
+       F_CPU/128  RFM69_FOSC128" \
+      'F_CPU/16'   CONF_RFM69_SCK_DIV
+  comment  "Debugging Flags"
+  dep_bool 'Debug Logging' DEBUG_RFM69_LOGGER $RFM69_SUPPORT
+  dep_bool 'Detailed register values' RFM69_REGISTER_DETAIL $DEBUG_RFM69_LOGGER
+
+endmenu 
+

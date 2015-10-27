@@ -29,5 +29,6 @@ source services/freqcount/config.in
 source services/tanklevel/config.in
 source services/filelogger/config.in
 source services/climaterecorder/config.in
+source services/climatereceiver/config.in
 endmenu
 

@@ -1,9 +1,12 @@
 TOPDIR ?= ../../..
 include $(TOPDIR)/.config
 
-$(ECMD_SENDER_SUPPORT)_SRC += protocols/ecmd/sender/ecmd_sender_net.c
-$(UECMD_SENDER_SUPPORT)_SRC += protocols/ecmd/sender/uecmd_sender_net.c
+$(RFM69_SUPPORT)_SRC += hardware/radio/rfm69/rfm69.c
+
+
 
 ##############################################################################
 # generic fluff
 include $(TOPDIR)/scripts/rules.mk
+
+
