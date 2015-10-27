@@ -1,7 +1,7 @@
 TOPDIR ?= ../..
 include $(TOPDIR)/.config
 
-$(CLIMATE_RECORDER_SUPPORT)_SRC += services/climaterecorder/climate.c
+$(CLIMATE_RECEIVER_SUPPORT)_SRC += services/climatereceiver/climatercv.c
 
 ##############################################################################
 # generic fluff

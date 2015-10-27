@@ -23,11 +23,31 @@
 #ifndef HAVE_CLIMATE_H
 #define HAVE_CLIMATE_H
 
-int8_t
-climate_recorder_write_entry(void);
+#include "services/clock/clock.h"
 
+#define MAX_CLIMATE_MESSAGE 30
+
+typedef struct
+{
+  volatile int16_t temp;
+  volatile uint16_t humid;
+  volatile timestamp_t timestamp;
+}climate_node_record_t;
+
+typedef struct
+{
+  uint8_t uid;
+  uint8_t current;
+  climate_node_record_t records[2];
+}climate_node_t;
+
+int8_t write_entry(climate_node_t* node);
+int8_t climate_recorder_write_entry(void);
+int8_t climate_recorder_update(void);
 uint8_t interval;
 
+extern climate_node_t climate_nodes[];
+extern uint8_t climate_nodes_count;
 #include "config.h"
 #ifdef DEBUG_CLIMATE_RECORDER
 # include "core/debug.h"
