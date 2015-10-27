@@ -1,0 +1,6 @@
+dep_bool_menu "Climate Receiver" CLIMATE_RECEIVER_SUPPORT $FILE_LOGGER_SUPPORT
+
+    comment  "Debugging Flags"
+    dep_bool "Climate RECEIVER Debug" DEBUG_CLIMATE_RECEIVER $DEBUG $CLIMATE_RECEIVER_SUPPORT
+endmenu
+

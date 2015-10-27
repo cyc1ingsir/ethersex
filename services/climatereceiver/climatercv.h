@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009 by Stefan Riepenhausen <rhn@gmx.net>
- * Copyright (c) 2015 by M. Ritscher <unreachable@gmx.net>
+ * Copyright (c) 2015 by Meinhard Ritscher <unreachable@gmx.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +20,20 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#include <avr/io.h>
+#ifndef HAVE_CLIMATERCV_H
+#define HAVE_CLIMATERCV_H
 
 #include "config.h"
-#include "climate.h"
-#include "protocols/ecmd/ecmd-base.h"
+#ifdef DEBUG_CLIMATE_RECEIVER
+# include "core/debug.h"
+# define CLIMATERCVDEBUG(a...)  debug_printf("climate receiver: " a)
+#else
+# define CLIMATERCVDEBUG(a...)
+#endif
 
+int8_t climate_receiver_init(void);
+int8_t climate_receiver_receive(void);
 
-int16_t parse_cmd_climate_recorder_write_entry(char *cmd, char *output, uint16_t len)
-{
-  climate_recorder_write_entry();
-  return ECMD_FINAL_OK;
-}
+// uint8_t parse_record(const char* data);
 
-
-/*
--- Ethersex META --
-block([[Climate_Recorder]])
-ecmd_feature(climate_recorder_write_entry, "climate_log",, Log a )
-*/
+#endif  /* HAVE_CLIMATERCV_H */

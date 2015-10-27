@@ -31,6 +31,14 @@
 #include "core/periodic.h"      /* for HZ */
 #include "hardware/dht/dht.h"
 #include "services/filelogger/filelogger.h"
+#include "services/clock/clock.h"
+
+#define NELEMS(x) (sizeof(x)/sizeof(x[0]))
+
+
+/* global variables */
+#include "node_config.h"
+uint8_t climate_nodes_count = NELEMS(climate_nodes);
 
 const uint8_t CLIMATE_LOGGING_INTERVAL = 60;
 uint8_t is_init;
@@ -52,6 +60,76 @@ climate_recorder_init(void)
     return 0;
   }
   return 1;
+}
+
+int8_t
+climate_recorder_update(void)
+{
+  for (uint8_t i = 0; i < NELEMS(climate_nodes); i++)
+  {
+    climate_node_t *node = &climate_nodes[i];
+    if (node->records[node->current].timestamp == 0) // nothing has been logged yet
+      continue;
+
+    climate_node_record_t *current_record =  &(node->records[node->current]);
+    // written record is either record[0] if current==1
+    //                       or record[1] if current==0 => (current + 1) % 2
+    climate_node_record_t *written_record =  &(node->records[(node->current + 1) % 2]);
+
+    // write entry every 10 minutes at least
+    // this covers the case "nothing logged since boot" too
+    if ( current_record->timestamp > written_record->timestamp &&
+         (current_record->timestamp - written_record->timestamp) > 600000)
+    {
+      CLIMATEDEBUG("write regular record after every 10 minutes %lu - %lu\n",
+                   current_record->timestamp,
+                   written_record->timestamp
+                  );
+      write_entry(node);
+      continue;
+    }
+    // test if temperature changed by at least 0.2 Degree or
+    // if humidity at least by 0.5 %
+    // if so, write logentry with shorter frequency than 10 minutes
+    if ( abs(current_record->temp - written_record->temp) > 1
+      || abs(current_record->humid - written_record->humid) > 4)
+    {
+      CLIMATEDEBUG("write in between record due to dramatic ;-) value difference\n");
+      write_entry(node);
+      continue;
+    }
+  }
+  return 0;
+}
+
+int8_t
+write_entry(climate_node_t* node)
+{
+  climate_node_record_t *current_record =  &(node->records[node->current]);
+  char datastring[20];
+  char *strptr = &datastring[0];
+
+  int8_t len = snprintf_P(strptr, 9, PSTR("[%06d]"), node->uid);
+  len += itoa_fixedpoint(current_record->temp, 1, strptr+len, 5);
+  datastring[len++] = ';';
+  len += itoa_fixedpoint(current_record->humid, 1, strptr+len, 5);
+  datastring[len++] = '\n';
+  datastring[len] = '\0';
+  CLIMATEDEBUG("log record: %s", strptr);
+  filelogger_log(strptr, len, current_record->timestamp);
+  node->current = (node->current + 1) % 2;
+  return 0;
+}
+
+static void
+update_local_node(void)
+{
+  if (dht_sensors[0].humid == 0)
+    return; // no plausible value
+  uint8_t current = climate_nodes[0].current;
+  climate_nodes[0].records[current].humid = dht_sensors[0].humid;
+  climate_nodes[0].records[current].temp = dht_sensors[0].temp;
+  climate_nodes[0].records[current].timestamp = clock_get_time();
 }
 
 /*
@@ -76,14 +154,18 @@ climate_recorder_write_entry(void)
     }
   }
 
-  char datastring[20];
-  char *strptr = &datastring[0];
-
   if (dht_sensors[0].humid == 0)
   {
     CLIMATEDEBUG("no plausible value\n");
     return 1;
   }
+
+  update_local_node();
+  climate_recorder_update();
+
+  /*
+  char datastring[20];
+  char *strptr = &datastring[0];
 
   int8_t len = itoa_fixedpoint(dht_sensors[0].temp, 1, strptr, 5);
   datastring[len++] = ';';
@@ -92,6 +174,7 @@ climate_recorder_write_entry(void)
   datastring[len] = '\0';
 
   filelogger_log(strptr, len);
+  */
 
   return 0;
 }
