@@ -31,7 +31,7 @@
 #endif
 
 uint8_t filelogger_init(const char *dirname);
-uint8_t filelogger_log(char *entry, uint16_t len);
+uint8_t filelogger_log(const char *entry, uint16_t len, const timestamp_t );
 uint8_t filelogger_close(void);
 
 #endif /* HAVE_FILELOGGER_H */
